@@ -1,0 +1,63 @@
+---
+- name: Ansible Playbook to Install and Setup Apache on Ubuntu
+  hosts: systems
+  gather_facts: false
+  become: true
+
+  handlers:
+    - name: restart-apache
+      service:
+        name: apache2
+        state: restarted
+
+  tasks:
+
+    - name: Add user Deploy
+      user:
+        name: deploy
+
+    - name: passwd Deploy
+      shell: echo deploy:Admin@123 | chpasswd
+
+    - name: Install latest version of Apache
+      apt: 
+        name: apache2 
+        update_cache: yes 
+        state: latest
+
+    - name: Enable and restart Apache
+      service:
+        name: apache2
+        enabled: true
+      notify: restart-apache
+
+    - name: Install required system packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+        state: latest
+        update_cache: true
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt:
+        name: docker-ce
+        state: latest
+        update_cache: true
+
+    - name: Add user Deploy
+      user:
+        name: deploy
+        group: docker
